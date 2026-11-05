@@ -1,6 +1,8 @@
 package pe.edu.upeu.Practica.controller;
 
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/ventas")
 public class VentaController {
+    private static final Logger LOG = LoggerFactory.getLogger(VentaController.class);
+
     private final VentaService ventaService;
 
     public VentaController(
@@ -33,6 +37,7 @@ public class VentaController {
 
         VentaResponseDTO response =
                 ventaService.registrar(request);
+        LOG.info("Venta registrada | id={} | items={}", response.getId(), request.getDetalles().size());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
