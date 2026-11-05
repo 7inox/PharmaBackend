@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Ejecución local
+/logs/
+.env
+.env.*
