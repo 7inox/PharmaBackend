@@ -3,6 +3,7 @@ package pe.edu.upeu.Practica.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.Map;
+import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -35,6 +36,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(a -> a
                 .requestMatchers("/api/v1/auth/login", "/api/health", "/swagger-ui.html",
                     "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
+                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
+                .requestMatchers("/actuator/**").hasAuthority("USUARIOS_ADMINISTRAR")
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/categorias/**", "/api/v1/productos/**").hasAuthority("CATALOGO_LEER")
                 .requestMatchers("/api/v1/categorias/**", "/api/v1/productos/**").hasAuthority("CATALOGO_ESCRIBIR")
@@ -64,7 +67,8 @@ public class SecurityConfig {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
         mapper.writeValue(response.getWriter(), Map.of("timestamp", LocalDateTime.now().toString(),
-            "status", status, "error", error, "message", message, "path", path));
+            "status", status, "error", error, "message", message, "path", path,
+            "requestId", MDC.get("requestId")));
     }
     @Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
     @Bean AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
