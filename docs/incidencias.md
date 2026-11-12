@@ -6,5 +6,6 @@
 | INC-02 | Ventas | Pedir 20 ventas de un rango amplio. Oracle devuelve todas las coincidencias y el controlador devuelve solo 20. | Alta | El controlador paginaba una lista ya cargada. | Backend `5cb445a` pagina IDs en Oracle y recupera los detalles de la página. Frontend `3312341` comparte el paginador y restablece la página al aplicar filtros. | Cerrada |
 | INC-03 | Nueva venta | Abrir el formulario con 5.000 productos. La SPA solicita todas las páginas para habilitar las búsquedas. | Media | El formulario filtraba catálogos completos en memoria. | Backend `5cb445a` expone búsquedas acotadas. Frontend `3312341` espera 300 ms y cancela consultas anteriores. | Cerrada |
 
-Las pruebas de paginación y de venta en `pharma-frontend/e2e` cubren los tres cambios.
+| INC-04 | Playwright | Durante el flujo de venta, cambiar de vendedor a administrador en la misma pestaña. | Media | La prueba podía escribir durante la transición al login y dejar vacío el usuario. | Frontend `69f4470` verifica el reporte en un contexto nuevo con una sesión de administración independiente. | Cerrada |
 
+Las pruebas de paginación y de venta en `pharma-frontend/e2e` cubren los tres cambios.

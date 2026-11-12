@@ -37,4 +37,3 @@ con las de otras instancias de PharmaBackend.
 
 El conjunto de pruebas crea clientes y productos sintéticos y registra ventas en el esquema
 de laboratorio. La respuesta 401 de una búsqueda se simula para comprobar la vuelta a la ruta.
-

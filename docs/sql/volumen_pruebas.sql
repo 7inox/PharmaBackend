@@ -35,4 +35,3 @@ commit;
 
 select count(*) as productos_carga from producto where creado_por = 'carga-s14';
 select count(*) as ventas_carga from ventas where creado_por = 'carga-s14';
-
