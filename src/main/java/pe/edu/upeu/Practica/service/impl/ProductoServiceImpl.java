@@ -1,5 +1,7 @@
 package pe.edu.upeu.Practica.service.impl;
 
+import pe.edu.upeu.Practica.dto.PaginaResponseDTO;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.context.ApplicationEventPublisher;
 import pe.edu.upeu.Practica.auditoria.EventoAuditoria;
 import org.slf4j.Logger;
@@ -134,15 +136,19 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = "productos")
-    public pe.edu.upeu.Practica.dto.PaginaResponseDTO<ProductoResponseDTO> listar(int pagina, int tamanio, String ordenarPor, String direccion) {
+    @Cacheable(cacheNames = "productos", condition = "#p6 == null")
+    public PaginaResponseDTO<ProductoResponseDTO> listar(int pagina, int tamanio, String ordenarPor, String direccion,
+            Long categoriaId, boolean vendible, String q) {
         if (pagina < 0 || tamanio < 1 || tamanio > 100) throw new ReglaNegocioException("Parámetros de paginación inválidos.");
         if (!java.util.Set.of("id", "nombre", "precio", "stock").contains(ordenarPor)) throw new ReglaNegocioException("Campo de orden no permitido.");
         if (!java.util.Set.of("asc", "desc").contains(direccion)) throw new ReglaNegocioException("Dirección de orden no permitida.");
         var sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(direccion), ordenarPor);
         if (!ordenarPor.equals("id")) sort = sort.and(org.springframework.data.domain.Sort.by("id"));
-        var resultado = productoRepository.findAll(org.springframework.data.domain.PageRequest.of(pagina, tamanio, sort));
-        return new pe.edu.upeu.Practica.dto.PaginaResponseDTO<>(resultado.getContent().stream().map(this::convertirResponse).toList(), resultado.getNumber(), resultado.getSize(), resultado.getTotalElements(), resultado.getTotalPages(), resultado.isLast());
+        var pageable = PageRequest.of(pagina, tamanio, sort);
+        var resultado = categoriaId == null && !vendible && q == null
+                ? productoRepository.findAll(pageable)
+                : productoRepository.buscar(categoriaId, vendible, q == null ? null : q.trim(), pageable);
+        return PaginaResponseDTO.de(resultado.map(this::convertirResponse));
     }
 
     private ProductoResponseDTO convertirResponse(Producto producto) {

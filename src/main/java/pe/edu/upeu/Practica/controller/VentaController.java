@@ -9,8 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.edu.upeu.Practica.dto.VentaRequestDTO;
 import pe.edu.upeu.Practica.dto.VentaResponseDTO;
-import pe.edu.upeu.Practica.dto.PaginaResponseDTO;
-import pe.edu.upeu.Practica.exception.ReglaNegocioException;
 import pe.edu.upeu.Practica.enums.EstadoVenta;
 import pe.edu.upeu.Practica.service.service.VentaService;
 
@@ -86,22 +84,10 @@ public class VentaController {
             @RequestParam(required = false) Integer pagina,
             @RequestParam(defaultValue = "10") int tamanio) {
 
-        List<VentaResponseDTO> ventas = ventaService.buscar(
-                        clienteId,
-                        estado,
-                        desde,
-                        hasta,
-                        ordenarPor,
-                        direccion);
-        // Se mantiene la lista para clientes anteriores que no piden página.
-        if (pagina == null) return ResponseEntity.ok(ventas);
-        if (pagina < 0 || tamanio < 1 || tamanio > 100)
-            throw new ReglaNegocioException("Página o tamaño de consulta inválido");
-        int inicio = (int) Math.min((long) pagina * tamanio, ventas.size());
-        int fin = Math.min(inicio + tamanio, ventas.size());
-        int totalPaginas = (int) Math.ceil((double) ventas.size() / tamanio);
-        return ResponseEntity.ok(new PaginaResponseDTO<>(
-                ventas.subList(inicio, fin), pagina, tamanio, ventas.size(), totalPaginas,
-                pagina + 1 >= totalPaginas));
+        if (pagina == null) {
+            return ResponseEntity.ok(ventaService.buscar(clienteId, estado, desde, hasta, ordenarPor, direccion));
+        }
+        return ResponseEntity.ok(ventaService.buscarPagina(clienteId, estado, desde, hasta,
+                ordenarPor, direccion, pagina, tamanio));
     }
 }

@@ -1,5 +1,8 @@
 package pe.edu.upeu.Practica.service.impl;
 
+import pe.edu.upeu.Practica.dto.PaginaResponseDTO;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -197,6 +200,14 @@ public class ClienteServiceImpl implements ClienteService {
         );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public PaginaResponseDTO<ClienteResponseDTO> buscarActivos(String q) {
+        var pagina = PageRequest.of(0, 6, Sort.by("apellidos", "id"));
+        if (q.isBlank()) return PaginaResponseDTO.de(org.springframework.data.domain.Page.empty(pagina));
+        return PaginaResponseDTO.de(clienteRepository.buscarActivos(q.trim(), pagina).map(this::convertirResponse));
+    }
+
     private String normalizar(String valor) {
 
         if (valor == null || valor.isBlank()) {
@@ -228,4 +239,3 @@ public class ClienteServiceImpl implements ClienteService {
         return new pe.edu.upeu.Practica.dto.PaginaResponseDTO<>(resultado.getContent().stream().map(this::convertirResponse).toList(), resultado.getNumber(), resultado.getSize(), resultado.getTotalElements(), resultado.getTotalPages(), resultado.isLast());
     }
 }
-

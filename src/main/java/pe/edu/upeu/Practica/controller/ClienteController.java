@@ -1,5 +1,6 @@
 package pe.edu.upeu.Practica.controller;
 
+import pe.edu.upeu.Practica.dto.PaginaResponseDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +36,11 @@ public class ClienteController {
         return ResponseEntity.ok(
                 clienteService.listar(pagina, tamanio, ordenarPor, direccion)
         );
+    }
+
+    @GetMapping("/activos")
+    public PaginaResponseDTO<ClienteResponseDTO> buscarActivos(@RequestParam String q) {
+        return clienteService.buscarActivos(q);
     }
 
     @GetMapping("/{id}")

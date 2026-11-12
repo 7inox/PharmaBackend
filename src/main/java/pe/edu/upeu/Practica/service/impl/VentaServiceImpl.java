@@ -1,5 +1,9 @@
 package pe.edu.upeu.Practica.service.impl;
 
+import pe.edu.upeu.Practica.dto.PaginaResponseDTO;
+import org.springframework.data.domain.PageRequest;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.context.ApplicationEventPublisher;
 import pe.edu.upeu.Practica.auditoria.EventoAuditoria;
 import org.slf4j.Logger;
@@ -132,17 +136,7 @@ public class VentaServiceImpl implements VentaService {
                         + "desde={} | hasta={} | ordenarPor={} | direccion={}",
                 clienteId, estado, desde, hasta, ordenarPor, direccion);
 
-        if (desde != null
-                && hasta != null
-                && desde.isAfter(hasta)) {
-
-            throw new ReglaNegocioException(
-                    "El rango de fechas es inválido: 'desde' ("
-                            + desde
-                            + ") es posterior a 'hasta' ("
-                            + hasta + ")");
-        }
-
+        validarRango(desde, hasta);
         Sort sort = construirSort(ordenarPor, direccion);
 
         LocalDateTime desdeHora = (desde == null)
@@ -168,6 +162,32 @@ public class VentaServiceImpl implements VentaService {
                 System.currentTimeMillis() - inicio);
 
         return resultado;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PaginaResponseDTO<VentaResponseDTO> buscarPagina(Long clienteId, EstadoVenta estado,
+            LocalDate desde, LocalDate hasta, String ordenarPor, String direccion, int pagina, int tamanio) {
+        validarRango(desde, hasta);
+        if (pagina < 0 || tamanio < 1 || tamanio > 100) {
+            throw new ReglaNegocioException("Parámetros de paginación inválidos.");
+        }
+        var orden = construirSort(ordenarPor, direccion).and(Sort.by(Sort.Direction.DESC, "id"));
+        var ids = ventaRepository.buscarIds(clienteId, estado, desde == null ? null : desde.atStartOfDay(),
+                hasta == null ? null : hasta.atTime(LocalTime.MAX), PageRequest.of(pagina, tamanio, orden));
+        if (ids.isEmpty()) {
+            return new PaginaResponseDTO<>(List.of(), pagina, tamanio,
+                    ids.getTotalElements(), ids.getTotalPages(), ids.isLast());
+        }
+        var porId = ventaRepository.consultarConDetalles(ids.getContent()).stream()
+                .collect(Collectors.toMap(Venta::getId, Function.identity()));
+        return PaginaResponseDTO.de(ids.map(id -> convertirResponse(porId.get(id))));
+    }
+
+    private static void validarRango(LocalDate desde, LocalDate hasta) {
+        if (desde != null && hasta != null && desde.isAfter(hasta)) {
+            throw new ReglaNegocioException("La fecha desde no puede ser posterior a la fecha hasta.");
+        }
     }
 
     private VentaResponseDTO convertirResponse(Venta venta) {
