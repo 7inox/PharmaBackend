@@ -131,7 +131,7 @@ public class ClienteServiceImpl implements ClienteService {
         cliente.setEstado(t.getEstado());
 
         Cliente actualizado =
-                clienteRepository.save(cliente);
+                clienteRepository.saveAndFlush(cliente);
 
         log.info(
                 "Cliente id={} actualizado correctamente",
@@ -183,6 +183,8 @@ public class ClienteServiceImpl implements ClienteService {
 
         return new ClienteResponseDTO(
                 cliente.getId(),
+                cliente.getCreadoPor(),
+                cliente.getModificadoPor(),
                 cliente.getDni(),
                 cliente.getNombres(),
                 cliente.getApellidos(),
@@ -226,3 +228,4 @@ public class ClienteServiceImpl implements ClienteService {
         return new pe.edu.upeu.Practica.dto.PaginaResponseDTO<>(resultado.getContent().stream().map(this::convertirResponse).toList(), resultado.getNumber(), resultado.getSize(), resultado.getTotalElements(), resultado.getTotalPages(), resultado.isLast());
     }
 }
+

@@ -8,7 +8,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.OracleDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
 
     properties:
@@ -31,3 +31,4 @@ app:
     expiracion-minutos: ${JWT_EXPIRACION_MINUTOS:60}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:4200,http://127.0.0.1:4200,http://localhost:4201,http://127.0.0.1:4201}
+

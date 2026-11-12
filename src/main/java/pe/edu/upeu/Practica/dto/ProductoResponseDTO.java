@@ -15,6 +15,8 @@ public class ProductoResponseDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long id;
+    private String creadoPor;
+    private String modificadoPor;
     private String nombre;
     private Double precio;
     private Integer stock;

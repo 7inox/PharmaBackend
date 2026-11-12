@@ -1,5 +1,7 @@
 package pe.edu.upeu.Practica.service.impl;
 
+import org.springframework.context.ApplicationEventPublisher;
+import pe.edu.upeu.Practica.auditoria.EventoAuditoria;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
@@ -34,6 +36,7 @@ public class VentaServiceImpl implements VentaService {
     private static final Logger log =
             LoggerFactory.getLogger(VentaServiceImpl.class);
 
+    private final ApplicationEventPublisher eventos;
     private final VentaRepository ventaRepository;
     private final ClienteRepository clienteRepository;
     private final ProductoRepository productoRepository;
@@ -41,7 +44,8 @@ public class VentaServiceImpl implements VentaService {
     public VentaServiceImpl(
             VentaRepository ventaRepository,
             ClienteRepository clienteRepository,
-            ProductoRepository productoRepository) {
+            ProductoRepository productoRepository, ApplicationEventPublisher eventos) {
+        this.eventos = eventos;
 
         this.ventaRepository = ventaRepository;
         this.clienteRepository = clienteRepository;
@@ -98,7 +102,9 @@ public class VentaServiceImpl implements VentaService {
 
         venta.setTotal(total);
 
-        Venta guardada =ventaRepository.save(venta);
+        Venta guardada = ventaRepository.save(venta);
+        eventos.publishEvent(EventoAuditoria.negocio("VENTA_REGISTRADA", "Venta", guardada.getId(),
+                "total=" + guardada.getTotal() + " | items=" + guardada.getDetalles().size()));
 
         return convertirResponse(guardada);
     }
@@ -183,6 +189,7 @@ public class VentaServiceImpl implements VentaService {
 
         return new VentaResponseDTO(
                 venta.getId(),
+                venta.getCreadoPor(),
                 venta.getFecha(),
                 venta.getCliente().getId(),
                 clienteNombre,

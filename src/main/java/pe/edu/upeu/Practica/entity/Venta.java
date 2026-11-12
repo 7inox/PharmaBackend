@@ -1,6 +1,8 @@
 package pe.edu.upeu.Practica.entity;
 
 import jakarta.persistence.*;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,11 +17,16 @@ import java.util.List;
 @AllArgsConstructor
 @Data
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "ventas")
 public class Venta {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @CreatedBy
+    @Column(name = "creado_por", length = 50, updatable = false)
+    private String creadoPor;
 
     @Column(nullable = false)
     private LocalDateTime fecha;

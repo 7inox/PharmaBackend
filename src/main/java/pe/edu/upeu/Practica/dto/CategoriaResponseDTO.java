@@ -15,6 +15,8 @@ public class CategoriaResponseDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long id;
+    private String creadoPor;
+    private String modificadoPor;
     private String nombre;
     private String descripcion;
     private Boolean estado;

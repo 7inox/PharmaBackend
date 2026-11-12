@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/ventas/**").hasAuthority("VENTAS_LEER")
                 .requestMatchers(HttpMethod.POST, "/api/v1/ventas").hasAuthority("VENTAS_REGISTRAR")
                 .requestMatchers("/api/v1/ventas/**").hasAuthority("VENTAS_REGISTRAR")
-                .requestMatchers("/api/v1/usuarios/**", "/api/v1/empleados/**", "/api/v1/roles/**").hasAuthority("USUARIOS_ADMINISTRAR")
+                .requestMatchers("/api/v1/usuarios/**", "/api/v1/empleados/**", "/api/v1/roles/**", "/api/v1/auditoria/**").hasAuthority("USUARIOS_ADMINISTRAR")
                 .anyRequest().authenticated())
             .exceptionHandling(e -> e
                 .authenticationEntryPoint((req, res, ex) -> {
