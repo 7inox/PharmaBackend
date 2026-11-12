@@ -14,4 +14,3 @@ alter table usuario_roles add constraint FKbt9i9yrb9ug88xnh82n9m60pr foreign key
 alter table usuario_roles add constraint FKuu9tea04xb29m2km5lwe46ua foreign key (usuario_id) references usuarios;
 alter table usuarios add constraint FKmp3bh77nis1qa4lu492l3p3yr foreign key (empleado_id) references empleados;
 alter table ventas add constraint FK4dgjhccl2uuo8swmxlxb4ipb5 foreign key (cliente_id) references clientes;
-
