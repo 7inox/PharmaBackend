@@ -1,0 +1,16 @@
+Venta API: 20020 · vendedor · 9
+{
+  "id": 293,
+  "fecha": "2026-11-12T22:41:59.033154",
+  "usuario": "vendedor",
+  "accion": "VENTA_REGISTRADA",
+  "entidad": "Venta",
+  "entidadId": 20020,
+  "detalle": "total=9.0 | items=1",
+  "requestId": "9446a591-8d81-4672-97d4-603e3b69277a"
+}
+
+22:41:59.043 INFO  [9446a591-8d81-4672-97d4-603e3b69277a] p.e.u.P.config.RequestIdFilter - POST /api/v1/ventas -> 201 (24 ms)
+VENTAS | ID=20020 | TOTAL=9 | CREADO_POR=vendedor
+AUDITORIA | VENTA_REGISTRADA | ENTIDAD=20020 | vendedor
+REQUEST_ID=9446a591-8d81-4672-97d4-603e3b69277a

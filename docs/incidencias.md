@@ -8,5 +8,6 @@
 | INC-04 · 12/11 | Playwright · Media | Cambiar de vendedor a administrador durante la prueba de reporte. Se esperaba iniciar sesión. El usuario quedaba vacío intermitentemente. | La transición volvía a montar el formulario. Frontend `69f4470` usa otro contexto. Ver tres repeticiones del flujo. |
 | INC-05 · 05/11 | Logging · Alta | Crear un cliente y revisar el log. Se esperaba un mensaje sin DNI. Se registraba el identificador personal. | El log interpolaba el DNI. Backend `2e310ce` elimina ese campo. Revisión del log de alta y E2E-15 para la bitácora. |
 | INC-06 · 05/11 | Configuración · Media | Arrancar con perfil explícito y configuración Redis. Se esperaba respetar el entorno elegido. La configuración de perfiles estaba mezclada. | Backend `2b1fe5b` separa la activación de perfiles y las propiedades Redis. Ver arranque y salud del entorno de pruebas. |
+| INC-07 · 12/11 | Auditoría · Media | Seleccionar la acción por su etiqueta accesible. La prueba no encontraba el selector por nombre exacto. | Asociación implícita de la etiqueta. Frontend `9fa985a` agrega un vínculo explícito. Ver E2E-12 y E2E-15. |
 
-Todas están cerradas. Por severidad, 3 altas y 3 medias. Por módulo, una en cada uno de los seis módulos de la tabla. Cero críticas o altas abiertas.
+Todas están cerradas. Hay 3 altas y 4 medias, una por cada módulo de la tabla. Cero críticas o altas abiertas.
