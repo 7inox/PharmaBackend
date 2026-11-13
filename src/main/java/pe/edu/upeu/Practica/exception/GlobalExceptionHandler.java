@@ -1,6 +1,7 @@
 package pe.edu.upeu.Practica.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -18,13 +19,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponseDTO> handleAuthentication(AuthenticationException ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponseDTO(LocalDateTime.now(), 401,
-            "Unauthorized", "Usuario o contraseña incorrectos", request.getRequestURI(), null));
+            "Unauthorized", "Usuario o contraseña incorrectos", request.getRequestURI(), MDC.get("requestId"), null));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponseDTO> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponseDTO(LocalDateTime.now(), 403,
-            "Forbidden", "No tiene permisos para realizar esta operación", request.getRequestURI(), null));
+            "Forbidden", "No tiene permisos para realizar esta operación", request.getRequestURI(), MDC.get("requestId"), null));
     }
     /*
      * Recurso no encontrado
@@ -41,6 +42,7 @@ public class GlobalExceptionHandler {
                 "Not Found",
                 ex.getMessage(),
                 request.getRequestURI(),
+                MDC.get("requestId"),
                 null
         );
 
@@ -65,6 +67,7 @@ public class GlobalExceptionHandler {
                 "Conflict",
                 ex.getMessage(),
                 request.getRequestURI(),
+                MDC.get("requestId"),
                 null
         );
 
@@ -101,6 +104,7 @@ public class GlobalExceptionHandler {
                 "Bad Request",
                 "Existen errores de validación",
                 request.getRequestURI(),
+                MDC.get("requestId"),
                 validationErrors
         );
 

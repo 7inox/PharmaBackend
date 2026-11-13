@@ -1,14 +1,14 @@
 package pe.edu.upeu.Practica.controller;
 
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.edu.upeu.Practica.dto.VentaRequestDTO;
 import pe.edu.upeu.Practica.dto.VentaResponseDTO;
-import pe.edu.upeu.Practica.dto.PaginaResponseDTO;
-import pe.edu.upeu.Practica.exception.ReglaNegocioException;
 import pe.edu.upeu.Practica.enums.EstadoVenta;
 import pe.edu.upeu.Practica.service.service.VentaService;
 
@@ -18,6 +18,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/ventas")
 public class VentaController {
+    private static final Logger LOG = LoggerFactory.getLogger(VentaController.class);
+
     private final VentaService ventaService;
 
     public VentaController(
@@ -33,6 +35,7 @@ public class VentaController {
 
         VentaResponseDTO response =
                 ventaService.registrar(request);
+        LOG.info("Venta registrada | id={} | items={}", response.getId(), request.getDetalles().size());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -81,22 +84,10 @@ public class VentaController {
             @RequestParam(required = false) Integer pagina,
             @RequestParam(defaultValue = "10") int tamanio) {
 
-        List<VentaResponseDTO> ventas = ventaService.buscar(
-                        clienteId,
-                        estado,
-                        desde,
-                        hasta,
-                        ordenarPor,
-                        direccion);
-        // Se mantiene la lista para clientes anteriores que no piden página.
-        if (pagina == null) return ResponseEntity.ok(ventas);
-        if (pagina < 0 || tamanio < 1 || tamanio > 100)
-            throw new ReglaNegocioException("Página o tamaño de consulta inválido");
-        int inicio = (int) Math.min((long) pagina * tamanio, ventas.size());
-        int fin = Math.min(inicio + tamanio, ventas.size());
-        int totalPaginas = (int) Math.ceil((double) ventas.size() / tamanio);
-        return ResponseEntity.ok(new PaginaResponseDTO<>(
-                ventas.subList(inicio, fin), pagina, tamanio, ventas.size(), totalPaginas,
-                pagina + 1 >= totalPaginas));
+        if (pagina == null) {
+            return ResponseEntity.ok(ventaService.buscar(clienteId, estado, desde, hasta, ordenarPor, direccion));
+        }
+        return ResponseEntity.ok(ventaService.buscarPagina(clienteId, estado, desde, hasta,
+                ordenarPor, direccion, pagina, tamanio));
     }
 }

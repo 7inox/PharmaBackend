@@ -1,5 +1,10 @@
 package pe.edu.upeu.Practica.service.impl;
 
+import pe.edu.upeu.Practica.dto.PaginaResponseDTO;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.context.ApplicationEventPublisher;
+import pe.edu.upeu.Practica.auditoria.EventoAuditoria;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -17,20 +22,19 @@ public class ClienteServiceImpl implements ClienteService {
     private static final Logger log =
             LoggerFactory.getLogger(ClienteServiceImpl.class);
 
+    private final ApplicationEventPublisher eventos;
     private final ClienteRepository clienteRepository;
 
     public ClienteServiceImpl(
-            ClienteRepository clienteRepository) {
+            ClienteRepository clienteRepository, ApplicationEventPublisher eventos) {
+        this.eventos = eventos;
         this.clienteRepository = clienteRepository;
     }
 
     @Override
     @Transactional
     public ClienteResponseDTO create(ClienteRequestDTO t) {
-        log.info(
-                "Registrando cliente con DNI={}",
-                t.getDni()
-        );
+        log.info("Registrando cliente");
 
         String dni = t.getDni().trim();
         String email = t.getEmail()
@@ -76,6 +80,7 @@ public class ClienteServiceImpl implements ClienteService {
                 "Cliente registrado correctamente id={}",
                 guardado.getId()
         );
+        eventos.publishEvent(EventoAuditoria.negocio("CLIENTE_REGISTRADO", "Cliente", guardado.getId(), null));
         return convertirResponse(guardado);
     }
 
@@ -134,7 +139,7 @@ public class ClienteServiceImpl implements ClienteService {
         cliente.setEstado(t.getEstado());
 
         Cliente actualizado =
-                clienteRepository.save(cliente);
+                clienteRepository.saveAndFlush(cliente);
 
         log.info(
                 "Cliente id={} actualizado correctamente",
@@ -186,6 +191,8 @@ public class ClienteServiceImpl implements ClienteService {
 
         return new ClienteResponseDTO(
                 cliente.getId(),
+                cliente.getCreadoPor(),
+                cliente.getModificadoPor(),
                 cliente.getDni(),
                 cliente.getNombres(),
                 cliente.getApellidos(),
@@ -196,6 +203,14 @@ public class ClienteServiceImpl implements ClienteService {
                 cliente.getFechaCreacion(),
                 cliente.getFechaModificacion()
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PaginaResponseDTO<ClienteResponseDTO> buscarActivos(String q) {
+        var pagina = PageRequest.of(0, 6, Sort.by("apellidos", "id"));
+        if (q.isBlank()) return PaginaResponseDTO.de(org.springframework.data.domain.Page.empty(pagina));
+        return PaginaResponseDTO.de(clienteRepository.buscarActivos(q.trim(), pagina).map(this::convertirResponse));
     }
 
     private String normalizar(String valor) {

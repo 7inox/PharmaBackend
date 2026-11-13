@@ -1,0 +1,10 @@
+{
+  "id": 293,
+  "fecha": "2026-11-12T22:41:59.033154",
+  "usuario": "vendedor",
+  "accion": "VENTA_REGISTRADA",
+  "entidad": "Venta",
+  "entidadId": 20020,
+  "detalle": "total=9.0 | items=1",
+  "requestId": "9446a591-8d81-4672-97d4-603e3b69277a"
+}

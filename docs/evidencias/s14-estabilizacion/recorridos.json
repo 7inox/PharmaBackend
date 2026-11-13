@@ -1,0 +1,41 @@
+[
+  {
+    "recorrido": 1,
+    "fechaLima": "2026-11-12",
+    "duracionFlujoSegundos": 2.403,
+    "duracionTotalSegundos": 3.11,
+    "metodo": "navegador automatizado con datos nuevos por recorrido",
+    "venta": 20018,
+    "stockAntes": 10,
+    "stockDespues": 8,
+    "requestId": "20591726-9448-4169-baec-c22eead3e697",
+    "desvio": "ninguno observado",
+    "salud": "UP"
+  },
+  {
+    "recorrido": 2,
+    "fechaLima": "2026-11-12",
+    "duracionFlujoSegundos": 2.512,
+    "duracionTotalSegundos": 3.19,
+    "metodo": "navegador automatizado con datos nuevos por recorrido",
+    "venta": 20019,
+    "stockAntes": 10,
+    "stockDespues": 8,
+    "requestId": "1f2d8d37-3a80-4bfd-a6d3-a4b67028cb9a",
+    "desvio": "ninguno observado",
+    "salud": "UP"
+  },
+  {
+    "recorrido": 3,
+    "fechaLima": "2026-11-12",
+    "duracionFlujoSegundos": 12.88,
+    "duracionTotalSegundos": 46.143,
+    "metodo": "navegador automatizado con datos nuevos por recorrido",
+    "venta": 20020,
+    "stockAntes": 10,
+    "stockDespues": 8,
+    "requestId": "9446a591-8d81-4672-97d4-603e3b69277a",
+    "desvio": "ninguno observado",
+    "salud": "UP"
+  }
+]

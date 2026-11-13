@@ -1,7 +1,13 @@
 package pe.edu.upeu.Practica.service.impl;
 
+import pe.edu.upeu.Practica.dto.PaginaResponseDTO;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.context.ApplicationEventPublisher;
+import pe.edu.upeu.Practica.auditoria.EventoAuditoria;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upeu.Practica.dto.ProductoRequestDTO;
@@ -19,16 +25,20 @@ import java.math.BigDecimal;
 @Service
 public class ProductoServiceImpl implements ProductoService {
     private static final Logger LOG = LoggerFactory.getLogger(ProductoServiceImpl.class);
+    private final ApplicationEventPublisher eventos;
     private final ProductoRepository productoRepository;
     private final CategoriaRepository categoriaRepository;
 
-    public ProductoServiceImpl(ProductoRepository productoRepository, CategoriaRepository categoriaRepository) {
+    public ProductoServiceImpl(ProductoRepository productoRepository, CategoriaRepository categoriaRepository,
+            ApplicationEventPublisher eventos) {
+        this.eventos = eventos;
         this.productoRepository = productoRepository;
         this.categoriaRepository = categoriaRepository;
     }
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "productos", allEntries = true)
     public ProductoResponseDTO create(ProductoRequestDTO t) {
         String nombre = t.getNombre().trim();
         if (productoRepository.existsByNombreIgnoreCase(nombre)) {
@@ -55,6 +65,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "productos", allEntries = true)
     public ProductoResponseDTO update(Long aLong, ProductoRequestDTO t) {
         Producto producto = productoRepository.findById(aLong).orElseThrow(() ->
                 new RecursosNoEncontradoException(
@@ -73,18 +84,24 @@ public class ProductoServiceImpl implements ProductoService {
                         "Categoria no encontrada con id: " + t.getCategoriaId())
         );
 
+        BigDecimal precioAnterior = producto.getPrecio();
         producto.setNombre(nombre);
         producto.setPrecio(BigDecimal.valueOf(t.getPrecio()));
         producto.setStock(t.getStock());
         producto.setEstado(t.getEstado());
         producto.setCategoria(categoria);
 
-        Producto productoActualizado = productoRepository.save(producto);
+        Producto productoActualizado = productoRepository.saveAndFlush(producto);
+        if (precioAnterior.compareTo(productoActualizado.getPrecio()) != 0) {
+            eventos.publishEvent(EventoAuditoria.negocio("PRECIO_MODIFICADO", "Producto",
+                    productoActualizado.getId(), precioAnterior + " -> " + productoActualizado.getPrecio()));
+        }
         return convertirResponse(productoActualizado);
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "productos", key = "'id-' + #p0")
     public ProductoResponseDTO read(Long aLong) {
         Producto producto = productoRepository.findById(aLong).orElseThrow(() ->
                 new RecursosNoEncontradoException(
@@ -95,6 +112,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "productos", allEntries = true)
     public void delete(Long aLong) {
         Producto producto = productoRepository.findById(aLong).orElseThrow(() ->
                 new RecursosNoEncontradoException(
@@ -105,29 +123,39 @@ public class ProductoServiceImpl implements ProductoService {
         }
         producto.setEstado(false);
         productoRepository.save(producto);
+        eventos.publishEvent(EventoAuditoria.negocio("PRODUCTO_ELIMINADO", "Producto",
+                producto.getId(), producto.getNombre()));
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "productos", key = "'todas'")
     public Iterable<ProductoResponseDTO> readAll() {
         return productoRepository.findAll().stream().map(this::convertirResponse).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public pe.edu.upeu.Practica.dto.PaginaResponseDTO<ProductoResponseDTO> listar(int pagina, int tamanio, String ordenarPor, String direccion) {
+    @Cacheable(cacheNames = "productos", condition = "#p6 == null")
+    public PaginaResponseDTO<ProductoResponseDTO> listar(int pagina, int tamanio, String ordenarPor, String direccion,
+            Long categoriaId, boolean vendible, String q) {
         if (pagina < 0 || tamanio < 1 || tamanio > 100) throw new ReglaNegocioException("Parámetros de paginación inválidos.");
         if (!java.util.Set.of("id", "nombre", "precio", "stock").contains(ordenarPor)) throw new ReglaNegocioException("Campo de orden no permitido.");
         if (!java.util.Set.of("asc", "desc").contains(direccion)) throw new ReglaNegocioException("Dirección de orden no permitida.");
         var sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.fromString(direccion), ordenarPor);
         if (!ordenarPor.equals("id")) sort = sort.and(org.springframework.data.domain.Sort.by("id"));
-        var resultado = productoRepository.findAll(org.springframework.data.domain.PageRequest.of(pagina, tamanio, sort));
-        return new pe.edu.upeu.Practica.dto.PaginaResponseDTO<>(resultado.getContent().stream().map(this::convertirResponse).toList(), resultado.getNumber(), resultado.getSize(), resultado.getTotalElements(), resultado.getTotalPages(), resultado.isLast());
+        var pageable = PageRequest.of(pagina, tamanio, sort);
+        var resultado = categoriaId == null && !vendible && q == null
+                ? productoRepository.findAll(pageable)
+                : productoRepository.buscar(categoriaId, vendible, q == null ? null : q.trim(), pageable);
+        return PaginaResponseDTO.de(resultado.map(this::convertirResponse));
     }
 
     private ProductoResponseDTO convertirResponse(Producto producto) {
         return new ProductoResponseDTO(
                 producto.getId(),
+                producto.getCreadoPor(),
+                producto.getModificadoPor(),
                 producto.getNombre(),
                 producto.getPrecio().doubleValue(),
                 producto.getStock(),

@@ -1,5 +1,7 @@
 package pe.edu.upeu.Practica.service.impl;
 
+import org.springframework.context.ApplicationEventPublisher;
+import pe.edu.upeu.Practica.auditoria.EventoAuditoria;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import org.slf4j.Logger;
@@ -21,6 +23,8 @@ import pe.edu.upeu.Practica.security.*;
 @Service
 public class SeguridadService {
     private static final Logger log = LoggerFactory.getLogger(SeguridadService.class);
+    private final ApplicationEventPublisher eventos;
+    private final pe.edu.upeu.Practica.auditoria.AuditoriaListener auditoria;
     private final UsuarioRepository usuarios;
     private final EmpleadoRepository empleados;
     private final RolRepository roles;
@@ -28,20 +32,31 @@ public class SeguridadService {
     private final PasswordEncoder encoder;
     private final JwtService jwt;
     public SeguridadService(UsuarioRepository usuarios, EmpleadoRepository empleados, RolRepository roles,
-            AuthenticationManager authentication, PasswordEncoder encoder, JwtService jwt) {
+            AuthenticationManager authentication, PasswordEncoder encoder, JwtService jwt,
+            ApplicationEventPublisher eventos, pe.edu.upeu.Practica.auditoria.AuditoriaListener auditoria) {
+        this.eventos = eventos;
+        this.auditoria = auditoria;
         this.usuarios=usuarios; this.empleados=empleados; this.roles=roles;
         this.authentication=authentication; this.encoder=encoder; this.jwt=jwt;
     }
     @Transactional(readOnly=true)
     public LoginResponse login(LoginRequest request) {
-        var authenticated=authentication.authenticate(
-            new UsernamePasswordAuthenticationToken(request.username().trim(), request.password()));
+        String username = request.username().trim();
+        org.springframework.security.core.Authentication authenticated;
+        try {
+            authenticated = authentication.authenticate(new UsernamePasswordAuthenticationToken(username, request.password()));
+        } catch (org.springframework.security.core.AuthenticationException error) {
+            auditoria.registrar(EventoAuditoria.login("LOGIN_FALLIDO", username.substring(0, Math.min(50, username.length()))));
+            throw error;
+        }
         UserDetails principal=(UserDetails) authenticated.getPrincipal();
         Usuario user=byName(principal.getUsername());
         log.info("Inicio de sesión correcto: {}", user.getUsername());
-        return new LoginResponse(jwt.generate(principal,user.getPassword()), "Bearer", jwt.expirationSeconds(), user.getUsername(),
+        LoginResponse response = new LoginResponse(jwt.generate(principal,user.getPassword()), "Bearer", jwt.expirationSeconds(), user.getUsername(),
             user.getEmpleado().getNombreCompleto(), PermisosPorRol.roles(user.getRoles()),
             PermisosPorRol.permisos(user.getRoles()));
+        auditoria.registrar(EventoAuditoria.login("LOGIN_EXITOSO", user.getUsername()));
+        return response;
     }
     @Transactional(readOnly=true) public UsuarioResponse me(String username) { return response(byName(username)); }
     @Transactional
@@ -96,6 +111,9 @@ public class SeguridadService {
         Usuario user=byId(id);
         if (!request.estado() && user.getUsername().equalsIgnoreCase(actor))
             throw new ReglaNegocioException("Un administrador no puede desactivarse a sí mismo");
+        if (Boolean.TRUE.equals(user.getEstado()) && !request.estado()) {
+            eventos.publishEvent(EventoAuditoria.negocio("USUARIO_DESACTIVADO", "Usuario", user.getId(), user.getUsername()));
+        }
         user.setEstado(request.estado());
         return response(user);
     }

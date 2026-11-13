@@ -1,7 +1,11 @@
 package pe.edu.upeu.Practica.service.impl;
 
+import org.springframework.context.ApplicationEventPublisher;
+import pe.edu.upeu.Practica.auditoria.EventoAuditoria;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.edu.upeu.Practica.dto.CategoriaRequestDTO;
@@ -16,16 +20,19 @@ import pe.edu.upeu.Practica.service.service.CategoriaService;
 @Service
 public class CategoriaServiceImpl implements CategoriaService {
     private static final Logger LOG = LoggerFactory.getLogger(CategoriaServiceImpl.class);
+    private final ApplicationEventPublisher eventos;
     private final CategoriaRepository categoriaRepository;
     private final pe.edu.upeu.Practica.repository.ProductoRepository productoRepository;
 
-    public CategoriaServiceImpl(CategoriaRepository categoriaRepository, pe.edu.upeu.Practica.repository.ProductoRepository productoRepository) {
+    public CategoriaServiceImpl(CategoriaRepository categoriaRepository, pe.edu.upeu.Practica.repository.ProductoRepository productoRepository, ApplicationEventPublisher eventos) {
+        this.eventos = eventos;
         this.productoRepository = productoRepository;
         this.categoriaRepository = categoriaRepository;
     }
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "categorias", allEntries = true)
     public CategoriaResponseDTO create(CategoriaRequestDTO t) {
         String nombre = t.getNombre().trim();
         if(categoriaRepository.existsByNombreIgnoreCase(nombre)){
@@ -44,6 +51,8 @@ public class CategoriaServiceImpl implements CategoriaService {
     }
 
     @Override
+    @Transactional
+    @CacheEvict(cacheNames = {"categorias", "productos"}, allEntries = true)
     public CategoriaResponseDTO update(Long aLong, CategoriaRequestDTO t) {
         Categoria categoria = categoriaRepository.findById(aLong).orElseThrow(()->
         new RecursosNoEncontradoException(
@@ -53,12 +62,13 @@ public class CategoriaServiceImpl implements CategoriaService {
         categoria.setDescripcion(t.getDescripcion());
         categoria.setEstado(t.getEstado());
 
-        Categoria catActualizada = categoriaRepository.save(categoria);
+        Categoria catActualizada = categoriaRepository.saveAndFlush(categoria);
         return convertirResponse(catActualizada);
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "categorias", key = "'id-' + #p0")
     public CategoriaResponseDTO read(Long aLong) {
         Categoria categoria = categoriaRepository.findById(aLong).orElseThrow(() ->
                 new RecursosNoEncontradoException(
@@ -69,6 +79,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "categorias", allEntries = true)
     public void delete(Long aLong) {
         Categoria categoria = categoriaRepository.findById(aLong).orElseThrow(() ->
                 new RecursosNoEncontradoException(
@@ -78,10 +89,12 @@ public class CategoriaServiceImpl implements CategoriaService {
             throw new ReglaNegocioException("No se puede eliminar una categoría que tiene productos asociados.");
         }
         categoriaRepository.delete(categoria);
+        eventos.publishEvent(EventoAuditoria.negocio("CATEGORIA_ELIMINADA", "Categoria", categoria.getId(), categoria.getNombre()));
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "categorias", key = "'todas'")
     public Iterable<CategoriaResponseDTO> readAll() {
         return categoriaRepository.findAll().stream().map(this::convertirResponse).toList();
     }
@@ -89,6 +102,8 @@ public class CategoriaServiceImpl implements CategoriaService {
     private CategoriaResponseDTO convertirResponse(Categoria categoria) {
         return new CategoriaResponseDTO(
                 categoria.getId(),
+                categoria.getCreadoPor(),
+                categoria.getModificadoPor(),
                 categoria.getNombre(),
                 categoria.getDescripcion(),
                 categoria.getEstado(),

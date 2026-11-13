@@ -1,5 +1,7 @@
 package pe.edu.upeu.Practica.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +15,25 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface VentaRepository extends JpaRepository<Venta, Long> {
+    @Query("""
+            select v.id from Venta v
+            where (:clienteId is null or v.cliente.id = :clienteId)
+              and (:estado is null or v.estado = :estado)
+              and (:desde is null or v.fecha >= :desde)
+              and (:hasta is null or v.fecha <= :hasta)
+            """)
+    Page<Long> buscarIds(Long clienteId, EstadoVenta estado, LocalDateTime desde,
+                         LocalDateTime hasta, Pageable pageable);
+
+    @Query("""
+            select distinct v from Venta v
+            join fetch v.cliente
+            left join fetch v.detalles d
+            left join fetch d.producto
+            where v.id in :ids
+            """)
+    List<Venta> consultarConDetalles(List<Long> ids);
+
     @Query(
     """
     SELECT DISTINCT v FROM Venta v 
