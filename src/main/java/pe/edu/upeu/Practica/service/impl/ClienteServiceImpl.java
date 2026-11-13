@@ -3,6 +3,8 @@ package pe.edu.upeu.Practica.service.impl;
 import pe.edu.upeu.Practica.dto.PaginaResponseDTO;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.context.ApplicationEventPublisher;
+import pe.edu.upeu.Practica.auditoria.EventoAuditoria;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,10 +22,12 @@ public class ClienteServiceImpl implements ClienteService {
     private static final Logger log =
             LoggerFactory.getLogger(ClienteServiceImpl.class);
 
+    private final ApplicationEventPublisher eventos;
     private final ClienteRepository clienteRepository;
 
     public ClienteServiceImpl(
-            ClienteRepository clienteRepository) {
+            ClienteRepository clienteRepository, ApplicationEventPublisher eventos) {
+        this.eventos = eventos;
         this.clienteRepository = clienteRepository;
     }
 
@@ -76,6 +80,7 @@ public class ClienteServiceImpl implements ClienteService {
                 "Cliente registrado correctamente id={}",
                 guardado.getId()
         );
+        eventos.publishEvent(EventoAuditoria.negocio("CLIENTE_REGISTRADO", "Cliente", guardado.getId(), null));
         return convertirResponse(guardado);
     }
 

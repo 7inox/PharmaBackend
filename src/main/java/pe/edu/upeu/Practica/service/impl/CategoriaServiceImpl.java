@@ -1,5 +1,7 @@
 package pe.edu.upeu.Practica.service.impl;
 
+import org.springframework.context.ApplicationEventPublisher;
+import pe.edu.upeu.Practica.auditoria.EventoAuditoria;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -18,10 +20,12 @@ import pe.edu.upeu.Practica.service.service.CategoriaService;
 @Service
 public class CategoriaServiceImpl implements CategoriaService {
     private static final Logger LOG = LoggerFactory.getLogger(CategoriaServiceImpl.class);
+    private final ApplicationEventPublisher eventos;
     private final CategoriaRepository categoriaRepository;
     private final pe.edu.upeu.Practica.repository.ProductoRepository productoRepository;
 
-    public CategoriaServiceImpl(CategoriaRepository categoriaRepository, pe.edu.upeu.Practica.repository.ProductoRepository productoRepository) {
+    public CategoriaServiceImpl(CategoriaRepository categoriaRepository, pe.edu.upeu.Practica.repository.ProductoRepository productoRepository, ApplicationEventPublisher eventos) {
+        this.eventos = eventos;
         this.productoRepository = productoRepository;
         this.categoriaRepository = categoriaRepository;
     }
@@ -85,6 +89,7 @@ public class CategoriaServiceImpl implements CategoriaService {
             throw new ReglaNegocioException("No se puede eliminar una categoría que tiene productos asociados.");
         }
         categoriaRepository.delete(categoria);
+        eventos.publishEvent(EventoAuditoria.negocio("CATEGORIA_ELIMINADA", "Categoria", categoria.getId(), categoria.getNombre()));
     }
 
     @Override
